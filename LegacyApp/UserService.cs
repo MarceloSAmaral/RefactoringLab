@@ -71,7 +71,7 @@ namespace LegacyApp
             {
                 // Do credit check and double credit limit
                 user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditServiceClient())
+                using (var userCreditService = GetUserCreditService())
                 {
                     var creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
                     creditLimit = creditLimit * 2;
@@ -82,7 +82,7 @@ namespace LegacyApp
             {
                 // Do credit check
                 user.HasCreditLimit = true;
-                using (var userCreditService = new UserCreditServiceClient())
+                using (var userCreditService = GetUserCreditService())
                 {
                     var creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
                     user.CreditLimit = creditLimit;
@@ -97,6 +97,11 @@ namespace LegacyApp
             _addUserMethod(user);
 
             return true;
+        }
+
+        private UserCreditServiceClient GetUserCreditService()
+        {
+            return new UserCreditServiceClient();
         }
     }
 }
