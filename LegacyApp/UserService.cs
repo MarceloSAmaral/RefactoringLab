@@ -14,13 +14,16 @@ namespace LegacyApp
         /// Parameterized constructor for the UserService class that accepts a method to add a user. This allows for dependency injection of the user addition logic.
         /// </summary>
         /// <param name="addUserMethod">Method for saving a user to the database.</param>
-        internal UserService(Action<User> addUserMethod)
+        /// <param name="getClientByIdMethod">Method for retrieving a client by their ID.</param>
+        internal UserService(Action<User> addUserMethod, Func<int, Client> getClientByIdMethod)
         {
             _addUserMethod = addUserMethod;
+            _getClientByIdMethod = getClientByIdMethod;
         }
 
 
         private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
+        private readonly Func<int,Client> _getClientByIdMethod = new ClientRepository().GetById;
 
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
@@ -48,8 +51,7 @@ namespace LegacyApp
                 return false;
             }
 
-            var clientRepository = new ClientRepository();
-            var client = clientRepository.GetById(clientId);
+            var client = _getClientByIdMethod(clientId);
 
             var user = new User
             {
