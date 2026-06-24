@@ -4,6 +4,9 @@ namespace LegacyApp
 {
     public class UserService
     {
+
+        private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
+
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
             if (string.IsNullOrEmpty(firname) || string.IsNullOrEmpty(surname))
@@ -72,8 +75,8 @@ namespace LegacyApp
             {
                 return false;
             }
-            
-            UserDataAccess.AddUser(user);
+
+            _addUserMethod(user);
 
             return true;
         }
