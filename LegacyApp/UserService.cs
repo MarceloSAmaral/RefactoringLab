@@ -5,7 +5,23 @@ namespace LegacyApp
     public class UserService
     {
 
+        /// <summary>
+        /// Default constructor for the UserService class. Initializes a new instance of the UserService class.
+        /// </summary>
+        public UserService() { }
+
+        /// <summary>
+        /// Parameterized constructor for the UserService class that accepts a method to add a user. This allows for dependency injection of the user addition logic.
+        /// </summary>
+        /// <param name="addUserMethod">Method for saving a user to the database.</param>
+        internal UserService(Action<User> addUserMethod)
+        {
+            _addUserMethod = addUserMethod;
+        }
+
+
         private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
+
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
