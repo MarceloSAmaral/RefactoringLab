@@ -15,15 +15,18 @@ namespace LegacyApp
         /// </summary>
         /// <param name="addUserMethod">Method for saving a user to the database.</param>
         /// <param name="getClientByIdMethod">Method for retrieving a client by their ID.</param>
-        internal UserService(Action<User> addUserMethod, Func<int, Client> getClientByIdMethod)
+        /// <param name="userCreditServiceFactoryMethod">Factory method for creating instances of the user credit service.</param>
+        internal UserService(Action<User> addUserMethod, Func<int, Client> getClientByIdMethod, Func<IDisposableUserCreditService> userCreditServiceFactoryMethod)
         {
             _addUserMethod = addUserMethod;
             _getClientByIdMethod = getClientByIdMethod;
+            _userCreditServiceFactoryMethod = userCreditServiceFactoryMethod;
         }
 
 
         private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
         private readonly Func<int,Client> _getClientByIdMethod = new ClientRepository().GetById;
+        private readonly Func<IDisposableUserCreditService> _userCreditServiceFactoryMethod = () => new UserCreditServiceClient();
 
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
@@ -101,7 +104,7 @@ namespace LegacyApp
 
         private IDisposableUserCreditService GetUserCreditService()
         {
-            return new UserCreditServiceClient();
+            return _userCreditServiceFactoryMethod();
         }
     }
 }
