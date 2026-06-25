@@ -99,7 +99,7 @@ namespace LegacyApp
             return true;
         }
 
-        private UserCreditServiceClient GetUserCreditService()
+        private IDisposableUserCreditService GetUserCreditService()
         {
             return new UserCreditServiceClient();
         }
