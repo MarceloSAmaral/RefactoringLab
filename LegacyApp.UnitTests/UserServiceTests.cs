@@ -7,7 +7,7 @@ public class UserServiceTests
 
     }
 
-    [Fact]
+    [Fact(DisplayName = "AddUser should return true when user is saved")]
     public void AddUser_ShouldReturnTrue_WhenUserIsSaved()
     {
         // Arrange
