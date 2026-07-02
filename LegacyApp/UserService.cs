@@ -16,18 +16,20 @@ namespace LegacyApp
         /// <param name="addUserMethod">Method for saving a user to the database.</param>
         /// <param name="getClientByIdMethod">Method for retrieving a client by their ID.</param>
         /// <param name="userCreditServiceFactoryMethod">Factory method for creating instances of the user credit service.</param>
-        internal UserService(Action<User> addUserMethod, Func<int, Client> getClientByIdMethod, Func<IDisposableUserCreditService> userCreditServiceFactoryMethod)
+        /// <param name="currentLocalDateTime">The current date.</param>
+        internal UserService(Action<User> addUserMethod, Func<int, Client> getClientByIdMethod, Func<IDisposableUserCreditService> userCreditServiceFactoryMethod, DateTime currentLocalDateTime)
         {
             _addUserMethod = addUserMethod;
             _getClientByIdMethod = getClientByIdMethod;
             _userCreditServiceFactoryMethod = userCreditServiceFactoryMethod;
+            _currentLocalDateTime = currentLocalDateTime.Kind == DateTimeKind.Local ? currentLocalDateTime : throw new ArgumentException("Provide the current local datetime with the correct kind.", nameof(currentLocalDateTime));
         }
 
 
         private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
         private readonly Func<int,Client> _getClientByIdMethod = new ClientRepository().GetById;
         private readonly Func<IDisposableUserCreditService> _userCreditServiceFactoryMethod = () => new UserCreditServiceClient();
-
+        private readonly DateTime _currentLocalDateTime = System.DateTime.Now;
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
@@ -41,7 +43,7 @@ namespace LegacyApp
                 return false;
             }
 
-            var now = DateTime.Now;
+            var now = _currentLocalDateTime;
             int age = now.Year - dateOfBirth.Year;
 
             if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day))

@@ -10,6 +10,7 @@ public class UserServiceTests
     const string Email = "john.doe@example.com";
     const int ClientId = 1;
     readonly DateTime userDateOfBirth = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Local);
+    readonly DateTime defaultCurrentLocalDateTime = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Local);
     const int EnoughCreditLimit = 500;
 
 
@@ -22,7 +23,7 @@ public class UserServiceTests
     public void AddUser_ShouldReturnTrue_WhenUserIsSaved()
     {
         // Arrange
-        var sut = new UserService(x => { }, id => new Client { Id = id, Name = "VeryImportantClient" }, () => new UserCreditServiceClient());
+        var sut = new UserService(x => { }, id => new Client { Id = id, Name = "VeryImportantClient" }, () => new UserCreditServiceClient(), defaultCurrentLocalDateTime);
         // Act
         var result = sut.AddUser(FirstName, LastName, Email, userDateOfBirth, ClientId);
         // Assert
@@ -36,7 +37,7 @@ public class UserServiceTests
         mockAddUserMethod
             .Setup(addUser => addUser(It.Is<User>(user => user.HasCreditLimit == false)))
             .Verifiable();
-        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "VeryImportantClient" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "VeryImportantClient" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, LastName, Email, userDateOfBirth, ClientId);
 
@@ -51,7 +52,7 @@ public class UserServiceTests
         mockAddUserMethod
             .Setup(addUser => addUser(It.Is<User>(user => user.HasCreditLimit == true && user.CreditLimit == EnoughCreditLimit * 2)))
             .Verifiable();
-        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "ImportantClient" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "ImportantClient" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, LastName, Email, userDateOfBirth, ClientId);
 
@@ -66,7 +67,7 @@ public class UserServiceTests
         mockAddUserMethod
             .Setup(addUser => addUser(It.Is<User>(user => user.HasCreditLimit == true)))
             .Verifiable();
-        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(mockAddUserMethod.Object, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, LastName, Email, userDateOfBirth, ClientId);
 
@@ -77,7 +78,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when they have CreditLimit and it is below 500")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenUserHasCreditidLimitAndItIsBelow500()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => 100));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => 100), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, LastName, Email, userDateOfBirth, ClientId);
 
@@ -87,7 +88,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the firstname is empty")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenFirstNameIsEmpty()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(String.Empty, LastName, Email, userDateOfBirth, ClientId);
 
@@ -97,7 +98,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the firstname is null")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenFirstNameIsNull()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(null, LastName, Email, userDateOfBirth, ClientId);
 
@@ -107,7 +108,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the lastname is empty")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenLastNameIsEmpty()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, String.Empty, Email, userDateOfBirth, ClientId);
 
@@ -117,7 +118,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the lastname is null")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenLastNameIsNull()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, null, Email, userDateOfBirth, ClientId);
 
@@ -127,7 +128,7 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the email address has a @ symbol but no dot")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenEmailHasAtSymbolButNoDot()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
         var result = sut.AddUser(FirstName, LastName, "invalid@email", userDateOfBirth, ClientId);
 
@@ -137,9 +138,9 @@ public class UserServiceTests
     [Fact(DisplayName = "AddUser should deny saving a user when the age is below 21")]
     public void AddUser_ShouldDenySavingAClientsUser_WhenAgeIsBelow21()
     {
-        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit));
+        var sut = new UserService(x => { throw new InvalidOperationException("User saving denied"); }, id => new Client { Id = id, Name = "Regular Client" }, () => new UserCreditServiceClientStub(() => EnoughCreditLimit), defaultCurrentLocalDateTime);
 
-        var result = sut.AddUser(FirstName, LastName, Email, System.DateTime.Now.Date.AddYears(-20), ClientId);
+        var result = sut.AddUser(FirstName, LastName, Email, defaultCurrentLocalDateTime.AddYears(-21).AddDays(1), ClientId);
 
         Assert.False(result);
     }
