@@ -4,11 +4,36 @@ namespace LegacyApp
 {
     public class UserService
     {
+        /// <summary>
+        /// Method for saving a user to the database.
+        /// </summary>
+        private readonly Action<User> _addUserMethod;
+
+        /// <summary>
+        /// Method for retrieving a client by their ID.
+        /// </summary>
+        private readonly Func<int, Client> _getClientByIdMethod;
+
+        /// <summary>
+        /// Factory method for creating instances of the user credit service.
+        /// </summary>
+        private readonly Func<IDisposableUserCreditService> _userCreditServiceFactoryMethod;
+
+        /// <summary>
+        /// The current local date and time used for age calculation.
+        /// </summary>
+        private readonly DateTime _currentLocalDateTime;
 
         /// <summary>
         /// Default constructor for the UserService class. Initializes a new instance of the UserService class.
         /// </summary>
-        public UserService() { }
+        public UserService()
+        {
+            _addUserMethod = UserDataAccess.AddUser;
+            _getClientByIdMethod = new ClientRepository().GetById;
+            _userCreditServiceFactoryMethod = () => new UserCreditServiceClient();
+            _currentLocalDateTime = System.DateTime.Now;
+        }
 
         /// <summary>
         /// Parameterized constructor for the UserService class that accepts a method to add a user. This allows for dependency injection of the user addition logic.
@@ -24,12 +49,6 @@ namespace LegacyApp
             _userCreditServiceFactoryMethod = userCreditServiceFactoryMethod;
             _currentLocalDateTime = currentLocalDateTime.Kind == DateTimeKind.Local ? currentLocalDateTime : throw new ArgumentException("Provide the current local datetime with the correct kind.", nameof(currentLocalDateTime));
         }
-
-
-        private readonly Action<User> _addUserMethod = UserDataAccess.AddUser;
-        private readonly Func<int,Client> _getClientByIdMethod = new ClientRepository().GetById;
-        private readonly Func<IDisposableUserCreditService> _userCreditServiceFactoryMethod = () => new UserCreditServiceClient();
-        private readonly DateTime _currentLocalDateTime = System.DateTime.Now;
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
