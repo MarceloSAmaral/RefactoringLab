@@ -4,6 +4,11 @@ namespace LegacyApp
 {
     public class UserService
     {
+        private const int MinimumAge = 21;
+        private const int MinimumCreditLimit = 500;
+        private const string VeryImportantClientName = "VeryImportantClient";
+        private const string ImportantClientName = "ImportantClient";
+
         /// <summary>
         /// Method for saving a user to the database.
         /// </summary>
@@ -52,32 +57,59 @@ namespace LegacyApp
 
         public bool AddUser(string firname, string surname, string email, DateTime dateOfBirth, int clientId)
         {
-            if (string.IsNullOrEmpty(firname) || string.IsNullOrEmpty(surname))
-            {
-                return false;
-            }
+            if (!IsNameValid(firname) || !IsNameValid(surname)) return false;
 
-            if (email.Contains("@") && !email.Contains("."))
-            {
-                return false;
-            }
+            if (!IsEmailValid(email)) return false;
 
-            var now = _currentLocalDateTime;
-            int age = now.Year - dateOfBirth.Year;
+            int age = CalculateAge(_currentLocalDateTime, dateOfBirth);
 
-            if (now.Month < dateOfBirth.Month || (now.Month == dateOfBirth.Month && now.Day < dateOfBirth.Day))
-            {
-                age--;
-            }
-
-            if (age < 21)
-            {
-                return false;
-            }
+            if (!IsUserOldEnough(age)) return false;
 
             var client = _getClientByIdMethod(clientId);
 
-            var user = new User
+            User user = CreateUser(firname, surname, email, dateOfBirth, client);
+
+            (user.HasCreditLimit, user.CreditLimit) = CalculateUserCredit(client, user, _userCreditServiceFactoryMethod);
+
+            if (!HasUserEnoughCredit(user)) return false;
+
+            _addUserMethod(user);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validates if the provided name is valid (not null or empty).
+        /// </summary>
+        /// <param name="value">Name part to validate.</param>
+        /// <returns></returns>
+        internal static bool IsNameValid(string value)
+        {
+            return !string.IsNullOrEmpty(value);
+        }
+
+        /// <summary>
+        /// Validates if the provided email is valid (contains "@" and ".").
+        /// </summary>
+        /// <param name="email">Email address to validate.</param>
+        /// <returns></returns>
+        internal static bool IsEmailValid(string email)
+        {
+            return !email.Contains("@") || email.Contains(".");
+        }
+
+        /// <summary>
+        /// Creates a new user instance with the provided details.
+        /// </summary>
+        /// <param name="firname">The user's first name.</param>
+        /// <param name="surname">The user's surname.</param>
+        /// <param name="email">The user's email address.</param>
+        /// <param name="dateOfBirth">The user's date of birth.</param>
+        /// <param name="client">The client to which the user belongs.</param>
+        /// <returns>The created user instance.</returns>
+        internal static User CreateUser(string firname, string surname, string email, DateTime dateOfBirth, Client client)
+        {
+            return new User
             {
                 Client = client,
                 DateOfBirth = dateOfBirth,
@@ -85,47 +117,69 @@ namespace LegacyApp
                 Firstname = firname,
                 Surname = surname
             };
-
-            if (client.Name == "VeryImportantClient")
-            {
-                // Skip credit chek
-                user.HasCreditLimit = false;
-            }
-            else if (client.Name == "ImportantClient")
-            {
-                // Do credit check and double credit limit
-                user.HasCreditLimit = true;
-                using (var userCreditService = GetUserCreditService())
-                {
-                    var creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
-                    creditLimit = creditLimit * 2;
-                    user.CreditLimit = creditLimit;
-                }
-            }
-            else
-            {
-                // Do credit check
-                user.HasCreditLimit = true;
-                using (var userCreditService = GetUserCreditService())
-                {
-                    var creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
-                    user.CreditLimit = creditLimit;
-                }
-            }
-
-            if (user.HasCreditLimit && user.CreditLimit < 500)
-            {
-                return false;
-            }
-
-            _addUserMethod(user);
-
-            return true;
         }
 
-        private IDisposableUserCreditService GetUserCreditService()
+        /// <summary>
+        /// Calculates the age of a user based on the current local date and their date of birth.
+        /// </summary>
+        /// <param name="currentLocalDateTime">The current local date and time.</param>
+        /// <param name="dateOfBirth">The user's date of birth.</param>
+        /// <returns>The calculated age.</returns>
+        internal static int CalculateAge(DateTime currentLocalDateTime, DateTime dateOfBirth)
         {
-            return _userCreditServiceFactoryMethod();
+            int age = currentLocalDateTime.Year - dateOfBirth.Year;
+
+            if (currentLocalDateTime.Month < dateOfBirth.Month || (currentLocalDateTime.Month == dateOfBirth.Month && currentLocalDateTime.Day < dateOfBirth.Day))
+            {
+                age--;
+            }
+
+            return age;
+        }
+
+        /// <summary>
+        /// Determines if the user is old enough based on the minimum age requirement.
+        /// </summary>
+        /// <param name="age">The age of the user.</param>
+        /// <returns></returns>
+        internal static bool IsUserOldEnough(int age)
+        {
+            return age >= MinimumAge;
+        }
+
+        /// <summary>
+        /// Calculates the user's credit limit based on the client type and user information. 
+        /// </summary>
+        /// <param name="client">The client for which to calculate credit.</param>
+        /// <param name="user">The user for whom to calculate credit.</param>
+        /// <param name="userCreditServiceFactory">The factory for creating user credit services.</param>
+        /// <returns>A tuple indicating whether the user has a credit limit and the limit amount.</returns>
+        internal static (bool HasCreditLimit, int CreditLimit) CalculateUserCredit(Client client, User user, Func<IDisposableUserCreditService> userCreditServiceFactory)
+        {
+            if (client.Name == VeryImportantClientName) return (false, 0);
+
+            bool hasCreditLimit = true;
+            int creditLimit = 0;
+
+            using var userCreditService = userCreditServiceFactory();
+            creditLimit = userCreditService.GetCreditLimit(user.Firstname, user.Surname, user.DateOfBirth);
+
+            if (client.Name == ImportantClientName)
+            {
+                creditLimit *= 2;
+            }
+
+            return (hasCreditLimit, creditLimit);
+        }
+
+        /// <summary>
+        /// Determines if the user has enough credit based on their credit limit and the minimum required credit limit.
+        /// </summary>
+        /// <param name="user">The user for whom to check credit.</param>
+        /// <returns></returns>
+        internal static bool HasUserEnoughCredit(User user)
+        {
+            return (!user.HasCreditLimit) || (user.HasCreditLimit && user.CreditLimit >= MinimumCreditLimit);
         }
     }
 }
