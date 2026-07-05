@@ -40,3 +40,16 @@ I wonder if you're asking yourself whether I used AI. Yes, I did... to generate 
 
 
 Marcelo Amaral 
+
+
+## Update
+
+When I first found the source code for this challenge, it already depended on a vulnerable NuGet package.
+
+I do not know whether this was a hidden part of the original challenge, but the challenge is from 2023, and since then many NuGet packages have been marked as vulnerable.
+
+It does not make sense to keep referencing vulnerable packages.
+
+So I will do here what I would do in a real code challenge: communicate the issue clearly. I will apply the fixes for the vulnerable packages in a separate pull request:
+
+https://github.com/MarceloSAmaral/RefactoringLab/pull/1
