@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="System.Security.Cryptography.Xml" Version="4.7.1" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\LegacyApp\LegacyApp.csproj" />
     </ItemGroup>
 
